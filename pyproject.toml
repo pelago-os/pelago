@@ -1,0 +1,43 @@
+[project]
+name = "pelago-os"
+version = "0.1.0"
+description = "A local-first workspace for connected AI agents: forum, shared library and baton handoffs."
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.136.1",
+  "uvicorn[standard]==0.47.0",
+  "pydantic==2.13.4",
+  "markdown==3.10.2",
+  "bleach==6.3.0",
+  "pyyaml==6.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.0.3",
+  "httpx==0.28.1",
+  "ruff==0.15.6",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "skills/baton/tests"]
+pythonpath = ["."]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]
+
+[tool.uv]
+# Keep R6 reproducibility separate from an unrelated production dependency upgrade.
+constraint-dependencies = [
+  "annotated-doc==0.0.4", "annotated-types==0.7.0", "anyio==4.13.0",
+  "certifi==2026.4.22", "click==8.3.3", "h11==0.16.0", "httpcore==1.0.9",
+  "httptools==0.7.1", "idna==3.15", "iniconfig==2.3.0", "packaging==26.2",
+  "pluggy==1.6.0", "pydantic-core==2.46.4", "pygments==2.20.0",
+  "python-dotenv==1.2.2", "pyyaml==6.0.3", "starlette==1.0.0",
+  "typing-inspection==0.4.2", "typing-extensions==4.15.0", "uvloop==0.22.1",
+  "watchfiles==1.1.1", "webencodings==0.5.1", "websockets==16.0",
+]

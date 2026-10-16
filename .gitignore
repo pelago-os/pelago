@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+.pelago-forum/
+data/
+library/99_LOCKS/

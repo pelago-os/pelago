@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════
+   Theme: 🎃 Halloween (幽灵南瓜) — 万圣节 2026
+   深紫黑底 + 南瓜橙 + 幽灵紫，点缀磷光绿、烛黄
+   只在 data-theme="halloween" 时生效。撤装：把默认主题切回 deep-sea 即可。
+   动画一律尊重"减少动态效果"。
+   ═══════════════════════════════════════════ */
+[data-theme="halloween"] {
+  color-scheme: dark;
+  --bg-abyss: #0a0610;
+  --bg-deep: #0d0814;
+  --bg-body: var(--bg-deep);
+  --bg-card: rgba(34, 18, 48, 0.62);
+  --bg-card-hover: rgba(48, 26, 66, 0.74);
+  --bg-input: rgba(22, 12, 34, 0.85);
+  --bg-sidebar: rgba(14, 8, 24, 0.94);
+
+  --text-primary: #efe6f6;
+  --text-secondary: #a897bd;
+  --text-muted: #75658c;
+
+  --accent-cyan: #ff8a1f;      /* 南瓜橙：沿用 cyan 这个变量名，全站原来用青色的地方自动变橙 */
+  --accent-purple: #9d5cff;
+  --accent-green: #7dffb0;
+  --accent-amber: #ffd23f;
+  --accent-rose: #ff6f91;
+
+  --border-glow: rgba(255, 138, 31, 0.2);
+  --border-subtle: rgba(160, 120, 200, 0.14);
+  --border-active: rgba(255, 138, 31, 0.5);
+
+  --shadow-glow: 0 0 22px rgba(255, 138, 31, 0.08);
+  --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="halloween"] .sidebar-logo h1 {
+  background: linear-gradient(135deg, #ff8a1f, #9d5cff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 角落装饰（右下南瓜灯、左上小幽灵、右上小蝙蝠）──────────
+   只占三个角，其余地方空着。z-index 60（浮在顶栏、底部导航、侧栏之上，保证看得见）。
+   幽灵、蝙蝠、水母 pointer-events: none，点击全部穿透；只有南瓜灯可以被点（糖果彩蛋，见下）；
+   位置是在真实页面（桌面 1280×800、手机 375×812）上量过与按钮零重叠的。 */
+.halloween-decor { display: none; }
+[data-theme="halloween"] .halloween-decor { display: block; }
+
+.hw-lamp {
+  position: fixed;
+  z-index: 60;   /* 高于顶栏(10)、底部导航(40)、侧栏(50)，低于对话框遮罩(100)；点击全部穿透 */
+  pointer-events: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 14px rgba(255, 138, 31, 0.45));
+  user-select: none;
+}
+.hw-lamp svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.hw-lamp.hw-br { bottom: 112px; right: 12px; width: 84px; height: 84px; transform: rotate(7deg); }   /* 抬高，站在登录首页右下角那排导航按钮（约 70px 高）上面 */
+
+.hw-critter {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+.hw-critter.hw-ghost {
+  top: 56px; left: 10px; font-size: 40px;
+  filter: drop-shadow(0 0 10px rgba(157, 92, 255, 0.55));
+  animation: hw-float 5.2s ease-in-out infinite;
+}
+.hw-critter.hw-bat {
+  top: 60px; right: 12px; font-size: 32px;
+  /* 蝙蝠本身很深，要靠外光托出来 */
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 12px rgba(157, 92, 255, 0.85));
+  animation: hw-flap 3.6s ease-in-out infinite;
+}
+
+/* 幽灵上下飘，蝙蝠左右扑腾；都很慢、幅度小 */
+@keyframes hw-float { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-9px) rotate(4deg); } }
+@keyframes hw-flap  { 0%, 100% { transform: translateX(0) rotate(-8deg); } 50% { transform: translateX(-7px) rotate(6deg) translateY(-4px); } }
+
+/* 烛火：轻轻闪 */
+.hw-flame { transform-origin: 50% 80%; animation: hw-flicker 2.6s ease-in-out infinite; }
+@keyframes hw-flicker {
+  0%, 100% { opacity: 1; transform: scale(1, 1); }
+  18%      { opacity: 0.82; transform: scale(0.94, 1.06); }
+  37%      { opacity: 1; transform: scale(1.05, 0.96); }
+  58%      { opacity: 0.88; transform: scale(0.97, 1.04); }
+  80%      { opacity: 1; transform: scale(1.02, 0.99); }
+}
+/* 整个南瓜的光晕随火苗一起呼吸 */
+.hw-lamp { animation: hw-glow 4.2s ease-in-out infinite; }
+@keyframes hw-glow {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(255, 138, 31, 0.35)); }
+  50%      { filter: drop-shadow(0 0 20px rgba(255, 170, 60, 0.62)); }
+}
+
+/* 手机：缩小、往边上靠。位置是在真实页面上量过重叠的：
+   - 登录首页顶部有一排按钮（y 60–94），所以幽灵、蝙蝠贴最顶边（y 14）；
+   - 右下的「登录」按钮在 y≈754–793，南瓜抬到 112px 以上；
+   - 底部导航条 44px 也在这之下。 */
+@media (max-width: 768px) {
+  .hw-lamp { opacity: 0.88; }
+  .hw-lamp.hw-br { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); right: 4px; width: 56px; height: 56px; }
+  .hw-critter.hw-ghost { top: 14px; left: 4px; font-size: 30px; }
+  .hw-critter.hw-bat   { top: 14px; right: 4px; font-size: 24px; }
+}
+
+
+
+/* ── 点南瓜灯：糖果彩蛋 ──────────────────────────
+   只有南瓜灯这一小块能被点（pointer-events: auto），位置是量过与所有按钮零重叠的；其他装饰仍然穿透。 */
+.hw-lamp { pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hw-lamp.hw-lamp-pop { animation: hw-pop 0.45s ease-out, hw-glow 4.2s ease-in-out infinite; }
+@keyframes hw-pop { 0% { transform: rotate(7deg) scale(1); } 30% { transform: rotate(-4deg) scale(1.22); } 60% { transform: rotate(10deg) scale(0.95); } 100% { transform: rotate(7deg) scale(1); } }
+
+.hw-candy {
+  position: fixed;
+  z-index: 61;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: hw-candy-fly 1.4s cubic-bezier(.2, .7, .3, 1) forwards;
+  filter: drop-shadow(0 0 6px rgba(255, 138, 31, 0.6));
+}
+/* 先噗地弹出去，再慢慢飘落、淡掉（只用 transform 和 opacity，GPU 加速） */
+@keyframes hw-candy-fly {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(0deg); }
+  12%  { opacity: 1; }
+  55%  { opacity: 1; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(var(--rot)); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * 1.1), calc(-50% + var(--dy) + 110px)) scale(0.8) rotate(calc(var(--rot) * 1.4)); }
+}
+
+/* ── 送糖：点赞在万圣节里变成糖果 ──────────────────────────
+   小红心藏起来，糖果露出来（.like-candy 平时在 style.css 里是 display:none）。 */
+[data-theme="halloween"] .like-heart { display: none; }
+[data-theme="halloween"] .like-candy { display: revert; }
+[data-theme="halloween"] .heart-btn:not(:disabled):hover,
+[data-theme="halloween"] .heart-btn.liked {
+  color: #ffb871;
+  border-color: rgba(255, 138, 31, 0.5);
+  background: rgba(255, 138, 31, 0.14);
+}
+
+/* ── 磷光水母（背景层）──────────────────────────
+   三只，大小、位置、节奏各不相同。z-index 0（在所有内容后面），pointer-events: none，
+   透明度很低，只是透过半透明的卡片隐约可见，不抢正文。纯 CSS 动画，只用 transform/opacity（GPU 加速）。 */
+.hw-jelly {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.5;
+  filter: drop-shadow(0 0 14px rgba(125, 255, 176, 0.55));
+  will-change: transform;
+}
+.hw-jelly svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.hw-jelly.hw-j1 { width: 96px; height: 144px; left: 6%;  top: 22%; animation: hw-drift-a 17s ease-in-out infinite; }
+.hw-jelly.hw-j2 { width: 64px; height: 96px;  right: 9%; top: 38%; animation: hw-drift-b 13s ease-in-out infinite; animation-delay: -5s; opacity: 0.42; }
+.hw-jelly.hw-j3 { width: 120px; height: 180px; left: 46%; top: 62%; animation: hw-drift-c 23s ease-in-out infinite; animation-delay: -9s; opacity: 0.3; }
+
+/* 慢慢漂：上下起伏、左右轻摆，伞盖一缩一放地"呼吸"（用整只的 scale 近似） */
+@keyframes hw-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1, 1); }
+  25%      { transform: translate(18px, -26px) scale(1.04, 0.96); }
+  50%      { transform: translate(-6px, -52px) scale(0.97, 1.04); }
+  75%      { transform: translate(-20px, -24px) scale(1.03, 0.97); }
+}
+@keyframes hw-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1, 1); }
+  30%      { transform: translate(-16px, 30px) scale(0.96, 1.05); }
+  60%      { transform: translate(10px, 58px) scale(1.04, 0.96); }
+}
+@keyframes hw-drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1, 1); }
+  35%      { transform: translate(26px, -34px) scale(1.03, 0.97); }
+  70%      { transform: translate(-22px, -64px) scale(0.98, 1.03); }
+}
+/* 触须轻轻摆 */
+.hw-jelly-tentacles { transform-origin: 50% 45%; animation: hw-sway 3.8s ease-in-out infinite; }
+@keyframes hw-sway { 0%, 100% { transform: skewX(-5deg); } 50% { transform: skewX(5deg); } }
+
+/* 手机：只留两只小的，别让背景太满、太费电 */
+@media (max-width: 768px) {
+  .hw-jelly.hw-j1 { width: 58px; height: 87px; left: 3%; top: 24%; }
+  .hw-jelly.hw-j2 { width: 44px; height: 66px; right: 4%; top: 46%; }
+  .hw-jelly.hw-j3 { display: none; }
+}
+
+/* 减少动态效果：不闪、不呼吸，光晕固定 */
+@media (prefers-reduced-motion: reduce) {
+  /* 持续动画（烛火闪、光晕呼吸、水母漂、幽灵飘、蝙蝠扑腾、触须摆）全部静止 */
+  .hw-flame, .hw-critter, .hw-jelly, .hw-jelly-tentacles { animation: none !important; }
+  .hw-lamp { animation: none; filter: drop-shadow(0 0 14px rgba(255, 138, 31, 0.45)); }
+  /* 有意的例外：点南瓜的"弹一下"和糖果是用户主动触发的一次性小动作，不属于持续动画，所以保留。
+     （上面 .hw-lamp 没有加 !important，点击时加上的 .hw-lamp-pop 能盖过它） */
+  .hw-lamp.hw-lamp-pop { animation: hw-pop 0.45s ease-out; }
+}
