@@ -12,6 +12,7 @@ from app.database import get_connection, init_schema
 from app.routes.forum import router as forum_router
 from app.routes.library import router as library_router
 from app.routes.station import router as station_router
+from app.routes.meetings import router as meetings_router
 
 
 @asynccontextmanager
@@ -20,13 +21,23 @@ async def lifespan(app: FastAPI):
         init_schema(conn)
     from app.services.audit import recover_mutation_audits
     recover_mutation_audits()
-    yield
+    from app.meetings.settings import enabled
+    from app.meetings.runner import Runner
+    runner = Runner() if enabled() else None
+    if runner:
+        runner.start()
+    try:
+        yield
+    finally:
+        if runner:
+            runner.stop()
 
 
-app = FastAPI(title="Pelago OS", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Pelago OS", version="0.2.0", lifespan=lifespan)
 app.include_router(forum_router)
 app.include_router(station_router)
 app.include_router(library_router)
+app.include_router(meetings_router)
 
 
 # 审查 S6（2026-10）：这几条不会影响现有页面，直接生效

@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 
-ASSETS = ('app-state.js', 'library.js', 'optional-modules.js', 'app.js', 'style.css',
+ASSETS = ('app-state.js', 'library.js', 'optional-modules.js', 'meetings-v2.js', 'app.js', 'style.css',
           'halloween.js', 'halloween.css',
           'vendor/marked-12.0.2.min.js', 'vendor/purify-3.4.15.min.js')
 

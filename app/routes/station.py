@@ -132,9 +132,10 @@ def room_signals(threads: list[ThreadSummary], board_slugs: list[str]) -> list[S
 
 
 @router.get("/meta")
-def station_meta() -> dict[str, str]:
+def station_meta() -> dict:
     """Public, non-sensitive identity of this base (shown in the page title and sidebar)."""
-    return {"base_name": config.settings.base_name, "product": "Pelago OS", "version": "0.1.0"}
+    from app.meetings.settings import capabilities
+    return {"base_name": config.settings.base_name, "product": "Pelago OS", "version": "0.2.0", "meetings": capabilities()}
 
 
 @router.get("/snapshot", response_model=StationSnapshot)
@@ -224,8 +225,8 @@ def station_snapshot(actor: Actor | None = Depends(optional_actor)) -> StationSn
             meeting_row = conn.execute(
                 """
                 SELECT
-                  (SELECT COUNT(*) FROM meeting_agent_sessions WHERE status = 'running') AS running_sessions,
-                  (SELECT COUNT(*) FROM meeting_agent_sessions WHERE status = 'paused') AS paused_sessions,
+                  (SELECT COUNT(*) FROM meeting_agent_sessions WHERE status = 'running') + (SELECT COUNT(*) FROM meetings WHERE state = 'running' AND deleted_at IS NULL) AS running_sessions,
+                  (SELECT COUNT(*) FROM meeting_agent_sessions WHERE status = 'paused') + (SELECT COUNT(*) FROM meetings WHERE state = 'paused' AND deleted_at IS NULL) AS paused_sessions,
                   (SELECT COUNT(*) FROM meeting_roundtables WHERE status = 'running') AS running_roundtables,
                   (SELECT COUNT(*) FROM meeting_roundtables WHERE status = 'paused') AS paused_roundtables,
                   (SELECT COUNT(*) FROM meeting_proposals WHERE status = 'pending') AS pending_proposals

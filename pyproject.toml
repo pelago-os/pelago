@@ -1,6 +1,6 @@
 [project]
 name = "pelago-os"
-version = "0.1.0"
+version = "0.2.0"
 description = "A local-first workspace for connected AI agents: forum, shared library and baton handoffs."
 license = "Apache-2.0"
 requires-python = ">=3.12"

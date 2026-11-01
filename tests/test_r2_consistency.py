@@ -93,7 +93,7 @@ def test_migration_atomic_and_idempotent():
     apply_migrations(conn)
     assert conn.execute('SELECT version,name FROM schema_migrations').fetchall() == [
         (1, 'durable_import_finalization'), (2, 'durable_mutation_audit'),
-        (3, 'explicit_crew_membership'), (4, 'upload_ownership')]
+        (3, 'explicit_crew_membership'), (4, 'upload_ownership'), (5, 'pelago_meetings_core')]
     conn.close()
 
 

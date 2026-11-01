@@ -1,0 +1,69 @@
+{
+  "source_commit": "85b93bc8d1399fb34a9a39e4aabaa1238fa6dcb9",
+  "files": [
+    {
+      "path": "app/meetings/__init__.py",
+      "source_sha256": "58eae071387ece0124334e6b37446bc49a847e9e5d924d16166194b3fe56f87a"
+    },
+    {
+      "path": "app/meetings/schema.py",
+      "source_sha256": "0c1e5aadad8367ab6569265ddfa9877342e3e8974b621a6e62d3c282dd70527d"
+    },
+    {
+      "path": "app/meetings/states.py",
+      "source_sha256": "95993da3f75f1b41c0a2b39eae39173d6c51f3600051a46aaf0e7dd2ce7fd676"
+    },
+    {
+      "path": "app/meetings/modes.py",
+      "source_sha256": "8f7c9c2de7e8461519f2e2fb2b6c57e9be61c1295f076b644d3c7a46ddba1167"
+    },
+    {
+      "path": "app/meetings/minutes.py",
+      "source_sha256": "d5eac7bb4b4bba293cc508a8a98c378319c6e24aceda22f348a79f75e8b6dcac"
+    },
+    {
+      "path": "app/meetings/service.py",
+      "source_sha256": "3629f517b10512efa3d09a2faf1931bc126e8099c8f42c1326690d6f22307556"
+    },
+    {
+      "path": "app/meetings/runner.py",
+      "source_sha256": "ac766c085cf0a6867cc2ad179c7d46090ffa5686a41f32fea8b6723b592108f5"
+    },
+    {
+      "path": "app/meetings/launcher.py",
+      "source_sha256": "0e9d60e5ed0f66a255b85edcfe59589db393519594b3b0834053c86df68c0ebd"
+    },
+    {
+      "path": "app/meetings/adapter_config.py",
+      "source_sha256": "a71248656738f759b081322717f93bd8659e7c10081ddccb9957ed6f86ba4355"
+    },
+    {
+      "path": "app/meetings/adapters/__init__.py",
+      "source_sha256": "1ac58f9ec158c75d6e6c0d39ed5e2c142bf4ec259c542b7a78aa730226f203b1"
+    },
+    {
+      "path": "app/meetings/adapters/mock_agent.py",
+      "source_sha256": "c2956db5d825f9c82021d255b9b0b68c5e7665f9007ddc7107feb9a3d71eb982"
+    },
+    {
+      "path": "app/routes/meetings.py",
+      "source_sha256": "55016ccb5e9f8316d032f23d2d8c9d42cfe67b412acf17a521d2692d5c8486f7"
+    },
+    {
+      "path": "tests/test_meetings.py",
+      "source_sha256": "225605684e51313c443caa9b560e6791fcedcb9e46a2fbbfa1cf177ce2252f88"
+    },
+    {
+      "path": "tests/test_meeting_modes.py",
+      "source_sha256": "3d1c8639e053115a30c1814e1da771c8c1a8a9718deecbdbe25ec226268571d8"
+    },
+    {
+      "path": "tests/test_meetings_http_boundary.py",
+      "source_sha256": "04d3d5d527422b1d7915e105e6fb9895fe7542898ae9671809f638a318694b92"
+    },
+    {
+      "path": "tests/meeting_runner_proc.py",
+      "source_sha256": "03cfc5f365e391222d95517791bdfb2773dbaf8f7dc6211d359efa421e4442dc"
+    }
+  ]
+}

@@ -222,7 +222,7 @@ def _update_locked(args):
     if version != args.expect_version:
         die(f'看板现在是 v{version}，你以为是 v{args.expect_version}，别人刚改过，请先 show 再来')
     if not lanes:
-        die('这份看板是单棒格式（没有 lanes），本工具只改 lanes 格式；请手动改或让明哥处理')
+        die('这份看板是单棒格式（没有 lanes），本工具只改 lanes 格式；请手动修改或联系维护者')
     lane = next((l for l in lanes if l['id'] == args.lane), None)
     if lane is None:
         die(f"没有跑道 {args.lane}，现有：{[l['id'] for l in lanes]}")

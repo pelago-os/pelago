@@ -5,6 +5,11 @@ are welcome, from typo fixes to new features.
 
 ## Getting set up
 
+Tests require Node.js and a C compiler available as `cc` for the native fake
+meeting CLI. On macOS install Xcode Command Line Tools. On Linux install your
+distribution's C build tools (for example `build-essential` on Debian/Ubuntu).
+The fixture makes no model calls. Missing tools are not a successful test run.
+
 ```bash
 uv sync --extra dev
 uv run pytest -q

@@ -56,4 +56,6 @@ def test_station_meta_exposes_only_the_configured_base_name(monkeypatch):
     from dataclasses import replace
     monkeypatch.setattr(config, "settings", replace(config.settings, base_name="Tide Station"))
     body = TestClient(app).get("/api/station/meta").json()
-    assert body == {"base_name": "Tide Station", "product": "Pelago OS", "version": "0.1.0"}
+    assert body == {"base_name": "Tide Station", "product": "Pelago OS", "version": "0.2.0",
+                    "meetings": {"enabled": False, "project_drafts": False,
+                                 "remote_cancellation": "unknown", "support_tiers": ["mock", "experimental"]}}

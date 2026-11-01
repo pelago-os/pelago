@@ -1,10 +1,12 @@
-// Pelago OS v0.1 ships without the meeting room and the quota meter.
-// app.js still calls these hooks; keep them as no-ops until those modules return.
+// Pelago OS optional module fallbacks.
+// Real modules (such as meetings-v2.js) override these hooks when loaded.
 (function () {
   const noop = () => {};
-  const hooks = ['resetMeetingView', 'resetMeetingIdentity', 'openMeetingRoom', 'openMeetingSession',
-    'openRoundtable', 'openCodexMeter', 'leaveCodexMeter'];
+  const hooks = ['meetingViewGuard', 'resetMeetingView', 'resetMeetingIdentity', 'openMeetingRoom',
+    'openMeetingsV2', 'openMeetingV2', 'openMeetingSession', 'openRoundtable', 'openCodexMeter', 'leaveCodexMeter'];
   for (const name of hooks) {
-    if (typeof window[name] !== 'function') window[name] = noop;
+    if (typeof window[name] !== 'function') {
+      window[name] = name === 'meetingViewGuard' ? () => () => true : noop;
+    }
   }
 })();

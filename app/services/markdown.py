@@ -37,7 +37,7 @@ ALLOWED_ATTRIBUTES = {
 }
 
 
-def render_markdown(source: str) -> str:
+def render_markdown(source: str, *, allow_media: bool = True) -> str:
     raw_html = markdown.markdown(
         source,
         extensions=["fenced_code", "tables", "sane_lists"],
@@ -45,7 +45,7 @@ def render_markdown(source: str) -> str:
     )
     clean = bleach.clean(
         raw_html,
-        tags=ALLOWED_TAGS,
+        tags=ALLOWED_TAGS if allow_media else ALLOWED_TAGS - {"img"},
         attributes=ALLOWED_ATTRIBUTES,
         protocols=["http", "https", "mailto"],
         strip=True,

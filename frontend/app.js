@@ -325,7 +325,7 @@ function stationRoomMetric(room) {
 
 function stationRoomAction(room) {
   if (room.kind === 'meeting') {
-    return `<button class="station-enter-btn" type="button" onclick="openMeetingRoom()">进入会议舱 <span>↗</span></button>`;
+    return `<button class="station-enter-btn" type="button" onclick="openMeetingsV2()">进入会议舱 <span>↗</span></button>`;
   }
   if (room.kind === 'library') {
     return `<button class="station-enter-btn" type="button" onclick="openLibrary()">进入图书馆 <span>↗</span></button>`;
@@ -400,7 +400,7 @@ function enterStationRoom(roomId) {
   const room = state.stationSnapshot?.rooms?.find(candidate => candidate.id === roomId);
   if (!room) return;
   if (room.kind === 'meeting') {
-    openMeetingRoom();
+    openMeetingsV2();
     return;
   }
   if (room.kind === 'library') {
@@ -603,7 +603,7 @@ function renderStation() {
       <div class="station-scene-telemetry" aria-label="基地状态">
         <span><small>CREW</small><strong>${snapshot.systems.crew_count}</strong></span>
         <span><small>SIGNALS</small><strong>${snapshot.systems.thread_count}</strong></span>
-        <span><small>MEETINGS</small><strong>${liveMeetings}</strong></span>
+        ${state.meetingsMeta?.enabled ? `<span><small>MEETINGS</small><strong>${liveMeetings}</strong></span>` : ''}
       </div>
       <p class="station-pan-hint"><span>↔</span> 左右滑动巡舱 · 点击发光舱室进入</p>
       <nav class="station-room-dock" aria-label="基地舱室直达">${stationRoomDock()}</nav>
@@ -623,7 +623,7 @@ function renderStation() {
         <span><small>CREW</small><strong>${snapshot.systems.crew_count}</strong></span>
         <span><small>THREADS</small><strong>${snapshot.systems.thread_count}</strong></span>
         <span><small>POSTS</small><strong>${snapshot.systems.post_count}</strong></span>
-        <span><small>MEETINGS</small><strong>${liveMeetings}</strong></span>
+        ${state.meetingsMeta?.enabled ? `<span><small>MEETINGS</small><strong>${liveMeetings}</strong></span>` : ''}
       </div>
     </section>`;
 
@@ -706,6 +706,9 @@ function renderStation() {
 
   html += `
     <section class="station-systems-deck">
+      ${state.meetingsMeta?.enabled ? `<button type="button" onclick="openMeetingsV2()">
+        <span>◈</span><span><small>MEETING ROOM</small><strong>${liveMeetings ? `${liveMeetings} 个会话运行或暂停` : '会议舱待命'}</strong></span><i>↗</i>
+      </button>` : ''}
       <button type="button" onclick="openLibrary()">
         <span>▤</span><span><small>MEMORY LIBRARY</small><strong>${snapshot.systems.library_available ? '本地记忆已连接' : '登录后进入'}</strong></span><i>↗</i>
       </button>
@@ -750,6 +753,7 @@ async function performLogin(username, password, button, options = {}) {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
+    const wasMeetingsV2 = ['meeting', 'meetings-v2', 'meeting-v2'].includes(state.view);
     resetLibraryIdentity();
     resetMeetingIdentity();
     state.token = result.token;
@@ -765,6 +769,7 @@ async function performLogin(username, password, button, options = {}) {
     setupIdentity();
     await loadMeDashboard();
     if (state.view === 'station') await openStation({ welcome: options.welcome === true });
+    else if (wasMeetingsV2 && state.meetingsMeta?.enabled) await openMeetingsV2();
     else if (state.view === 'meeting') await openMeetingRoom();
     else if (state.view?.startsWith('library')) await openLibrary();
     else if (state.view === 'codex_meter') await openCodexMeter();
@@ -1516,6 +1521,10 @@ function updateToolbarTitle() {
     el.textContent = '🎙️ 会议室';
   } else if (state.view === 'meeting-session') {
     el.textContent = '🎙️ 会话';
+  } else if (state.view === 'meetings-v2') {
+    el.textContent = '◈ 会议舱';
+  } else if (state.view === 'meeting-v2') {
+    el.textContent = '◈ 会议';
   } else if (state.view === 'roundtable') {
     el.textContent = '◈ 圆桌会议';
   } else if (state.view?.startsWith('library')) {
@@ -2749,14 +2758,32 @@ function isAdminSession() {
   return state.currentAgent?.role === 'admin';
 }
 
-// 基地名来自服务端配置（PELAGO_BASE_NAME），默认 Pelago Base；自己部署可以起自己的名字。
+function syncMeetingsEntryVisibility() {
+  const enabled = Boolean(state.meetingsMeta?.enabled);
+  const btn = $('#meeting-room-btn');
+  if (btn) btn.style.display = enabled ? '' : 'none';
+}
+
+// 基地名与功能元信息来自服务端配置（/api/station/meta），默认 Pelago Base；自己部署可以起自己的名字。
 async function loadBaseIdentity() {
+  if (!state.meetingsMeta) {
+    state.meetingsMeta = { enabled: false, support_tiers: [], project_drafts: false, remote_cancellation: 'unknown' };
+  }
   try {
     const meta = await api('/api/station/meta');
     state.baseName = meta.base_name || state.baseName;
+    if (meta.meetings && typeof meta.meetings === 'object') {
+      state.meetingsMeta = {
+        enabled: Boolean(meta.meetings.enabled),
+        support_tiers: Array.isArray(meta.meetings.support_tiers) ? meta.meetings.support_tiers : [],
+        project_drafts: Boolean(meta.meetings.project_drafts),
+        remote_cancellation: meta.meetings.remote_cancellation || 'unknown',
+      };
+    }
   } catch {
-    // 拿不到就沿用默认名，不影响其他功能
+    // 拿不到就沿用默认名与默认关闭状态，不影响其他功能
   }
+  syncMeetingsEntryVisibility();
   document.title = `${state.baseName} · Pelago OS`;
   document.querySelectorAll('[data-base-name]').forEach(el => { el.textContent = state.baseName; });
 }
@@ -2812,6 +2839,8 @@ $('#refresh-btn').addEventListener('click', () => {
   if (state.view === 'detail' || state.view === 'list') { refreshForumView(); return; }
   if (state.view === 'station') openStation();
   else if (state.view === 'review') openReviewQueue();
+  else if (state.view === 'meetings-v2') openMeetingsV2();
+  else if (state.view === 'meeting-v2' && state.mv2MeetingId) openMeetingV2(state.mv2MeetingId);
   else if (state.view === 'meeting') openMeetingRoom();
   else if (state.view === 'meeting-session' && state.currentMeetingSession) {
     openMeetingSession(state.currentMeetingSession.id);
@@ -2839,7 +2868,7 @@ $('#new-thread-btn').addEventListener('click', openComposeModal);
 $('#profile-btn').addEventListener('click', openProfileModal);
 $('#register-btn').addEventListener('click', openRegisterModal);
 $('#station-btn')?.addEventListener('click', openStation);
-$('#meeting-room-btn')?.addEventListener('click', openMeetingRoom);
+$('#meeting-room-btn')?.addEventListener('click', openMeetingsV2);
 $('#library-btn')?.addEventListener('click', () => {
   openLibrary();
 });

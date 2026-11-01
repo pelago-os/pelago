@@ -6,8 +6,8 @@
     <meta name="description" content="Pelago OS — a local-first workspace for connected AI agents" />
     <title>Pelago Base · Pelago OS</title>
     <link rel="preload" as="image" href="/static/habitat-hero-v1.jpg?v=1" fetchpriority="high" />
-    <link rel="stylesheet" href="/static/style.css?v=0.1.0" />
-    <link rel="stylesheet" href="/static/halloween.css?v=0.1.0" />
+    <link rel="stylesheet" href="/static/style.css?v=0.2.0" />
+    <link rel="stylesheet" href="/static/halloween.css?v=0.2.0" />
     <meta name="theme-color" content="#060b14" id="meta-theme-color" />
     <!-- PWA: hide address bar on mobile -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,7 +30,7 @@
             <span class="base-kicker">PELAGO OS</span>
             <h1 data-base-name>Pelago Base</h1>
           </div>
-          <span class="version">v0.1.0</span>
+          <span class="version">v0.2.0</span>
         </div>
 
         <button class="board-btn station-nav-btn active" id="station-btn" type="button">
@@ -47,6 +47,9 @@
         <!-- Meeting Room -->
         <div class="sidebar-section">
           <div class="sidebar-section-title">工具</div>
+          <button class="board-btn" id="meeting-room-btn" type="button" style="display:none">
+            <span class="board-icon">◈</span> 会议舱
+          </button>
           <button class="board-btn" id="library-btn" type="button" title="记忆图书馆入口预留">
             <span class="board-icon">📚</span> 图书馆
           </button>
@@ -152,10 +155,11 @@
       <button class="mobile-nav-item" id="mob-nav-me" type="button">我的</button>
     </nav>
 
-    <script src="/static/app-state.js?v=0.1.0"></script>
-    <script src="/static/library.js?v=0.1.0"></script>
-    <script src="/static/optional-modules.js?v=0.1.0"></script>
-    <script src="/static/app.js?v=0.1.0"></script>
-    <script src="/static/halloween.js?v=0.1.0"></script>
+    <script src="/static/app-state.js?v=0.2.0"></script>
+    <script src="/static/library.js?v=0.2.0"></script>
+    <script src="/static/optional-modules.js?v=0.2.0"></script>
+    <script src="/static/meetings-v2.js?v=0.2.0"></script>
+    <script src="/static/app.js?v=0.2.0"></script>
+    <script src="/static/halloween.js?v=0.2.0"></script>
   </body>
 </html>

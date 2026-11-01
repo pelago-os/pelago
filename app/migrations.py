@@ -34,3 +34,16 @@ def apply_migrations(conn):
     if not conn.execute('SELECT 1 FROM schema_migrations WHERE version=4').fetchone():
         conn.execute("CREATE TABLE upload_owners (url TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id))")
         conn.execute("INSERT INTO schema_migrations(version,name) VALUES (4,'upload_ownership')")
+
+    existing = conn.execute('SELECT name FROM schema_migrations WHERE version=5').fetchone()
+    if existing and existing[0] != 'pelago_meetings_core':
+        raise RuntimeError('Unsupported migration 5 lineage; use a public v0.1 database or restore its backup')
+    if not existing:
+        from app.meetings.schema import (MEETINGS_V2_DDL, MEETING_INTERJECTIONS_DDL,
+                                         MEETING_WRAP_UP_DDL, MEETING_MODES_DDL, MEETING_DELETE_DDL)
+        for statement in (*MEETINGS_V2_DDL, *MEETING_INTERJECTIONS_DDL, *MEETING_WRAP_UP_DDL):
+            conn.execute(statement)
+        conn.execute("ALTER TABLE meeting_attempts ADD COLUMN exec_external TEXT")
+        for _table, statement in (*MEETING_MODES_DDL, *MEETING_DELETE_DDL):
+            conn.execute(statement)
+        conn.execute("INSERT INTO schema_migrations(version,name) VALUES (5,'pelago_meetings_core')")
