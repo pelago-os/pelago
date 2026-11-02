@@ -1,0 +1,54 @@
+{
+  "instances": [
+    {
+      "instance_id": "agent-a.hermes.workstation",
+      "agent_id": "agent-a",
+      "adapter": "hermes",
+      "route_key": "agent-a",
+      "capabilities": [
+        "text",
+        "conversation_resume"
+      ]
+    },
+    {
+      "instance_id": "agent-b.hermes.workstation",
+      "agent_id": "agent-b",
+      "adapter": "hermes",
+      "route_key": "agent-b",
+      "capabilities": [
+        "text",
+        "conversation_resume"
+      ]
+    },
+    {
+      "instance_id": "agent-c.openclaw.workstation",
+      "agent_id": "agent-c",
+      "adapter": "openclaw",
+      "route_key": "route-c",
+      "capabilities": [
+        "text",
+        "conversation_resume"
+      ]
+    },
+    {
+      "instance_id": "agent-d.openclaw.workstation",
+      "agent_id": "agent-d",
+      "adapter": "openclaw",
+      "route_key": "route-d",
+      "capabilities": [
+        "text",
+        "conversation_resume"
+      ]
+    },
+    {
+      "instance_id": "agent-e.antigravity.workstation",
+      "agent_id": "agent-e",
+      "adapter": "antigravity",
+      "route_key": "agent-e",
+      "capabilities": [
+        "text",
+        "conversation_resume"
+      ]
+    }
+  ]
+}
