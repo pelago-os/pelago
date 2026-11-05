@@ -121,7 +121,10 @@ def adapters(actor: Actor = Depends(require_actor)):
         out = []
         for name, m in sorted(load_members().items()):
             installed = Path(m.command[0]).exists() and Path(m.cwd).is_dir()
-            if m.adapter in ("claude_code", "hermes"):
+            if m.adapter == "hermes":
+                from app.meetings.adapters.hermes_runtime import health
+                status = health(m)
+            elif m.adapter == "claude_code":
                 from app.meetings.adapters.claude_runtime import health
                 status = health(m)
             else:

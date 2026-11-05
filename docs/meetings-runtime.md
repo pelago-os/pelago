@@ -283,3 +283,28 @@ reclaimed without releasing the quarantine slot. Lost-lease workers leave
 reclamation to the next lease holder. Startup scans only recognized attempt files
 and preserves unrelated files and attempt-home symlinks. Original credentials,
 shared profiles and other attempts are never cleanup targets.
+
+
+## Bounded adapter output
+
+The host drains stdout and stderr concurrently into private files capped at 8 MiB
+and 2 MiB per attempt respectively. A byte beyond either cap marks the attempt
+failed; truncated receipts are never parsed as success. The scheduler stops the
+local process group on its next pass and requires the usual group/external-unit
+termination evidence before releasing capacity. Unknown termination remains
+quarantined. Normal exit drains both pipes before parsing; missing EOF or collection
+failure rejects the receipt. Loss of scheduler ownership still forbids result writes.
+These limits cover captured streams, not arbitrary files written by a runtime, total
+process memory, or remote billing. They are not an OS sandbox.
+
+The Hermes wrapper also bounds Python-level stdout at 8 MiB and stderr at 2 MiB
+(measured in UTF-8 bytes); stderr is counted and discarded. Direct file-descriptor
+writes remain subject to host capture, and mixed/invalid JSON still fails closed.
+Updating a packaged speaker requires explicit runtime repackaging and a newly
+reviewed manifest; existing approved runtimes are not automatically modified.
+
+Within one private Codex profile, an identical access token recorded both as a
+singleton and in a single-entry pool is accepted once. Different values, invalid
+values or multi-entry pools are rejected. No credential refresh, copy or write is
+introduced. Adapter health dispatches to the corresponding implementation and
+remains a filesystem/configuration check, never live model acceptance.

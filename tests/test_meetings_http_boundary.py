@@ -56,3 +56,28 @@ def test_action_bad_shape_has_no_server_error(env, action, extra):
     r = env.client.post(f"/api/meetings/{m['id']}/{action}", headers=tok('moderator'),
         json={'request_id': rid(), 'expected_version': m['version'], **extra})
     assert r.status_code == 400 and r.json()["error"] == "invalid_request", r.text
+
+
+def test_health_dispatches_to_own_adapter_without_provider_calls(env, monkeypatch):
+    from dataclasses import replace
+    from app.routes import meetings
+    from app.meetings.adapters import claude_runtime, hermes_runtime
+    members=meetings.load_members()
+    members['agent_alpha']=replace(members['agent_alpha'], adapter='hermes')
+    members['agent_beta']=replace(members['agent_beta'], adapter='claude_code')
+    monkeypatch.setattr(meetings,'load_members',lambda:members)
+    seen=[]
+    def probe(adapter):
+        def health(member):
+            assert member.adapter==adapter
+            seen.append((adapter,member.username))
+            return {'ok':False,'status':'experimental_requires_acceptance','live_verified':False}
+        return health
+    monkeypatch.setattr(hermes_runtime,'health',probe('hermes'))
+    monkeypatch.setattr(claude_runtime,'health',probe('claude_code'))
+    for module in (hermes_runtime,claude_runtime):
+        monkeypatch.setattr(module,'_approved',lambda *a,**k:pytest.fail('listing must not approve a runtime'))
+    response=env.client.get('/api/meetings/adapters',headers=tok('moderator'))
+    assert response.status_code==200
+    assert seen==[('hermes','agent_alpha'),('claude_code','agent_beta')]
+    assert all(m['health']['live_verified'] is False for m in response.json()['members'])

@@ -118,3 +118,30 @@ def test_ambiguous_pool_never_falls_back(tmp_path, pool):
                              'credential_pool':{'openai-codex':pool}}))
     p.chmod(0o600)
     with pytest.raises(s.PolicyViolation): s.access_token(tmp_path)
+
+
+@pytest.mark.parametrize('single,pooled,accepted', [
+    ('same','same',True), ('first','second',False), ('same','',False),
+    ('same',None,False), ('same',42,False), ('same',{},False),
+    ('', 'same',False), (None,'same',True),
+])
+def test_singleton_and_single_pool_entry_must_identify_one_token(tmp_path, single, pooled, accepted):
+    doc = {'providers':{'openai-codex':{'tokens':{'access_token':single}}},
+           'credential_pool':{'openai-codex':[{'access_token':pooled, 'refresh_token':'do-not-touch'}]}}
+    path=tmp_path/'auth.json';path.write_text(json.dumps(doc));path.chmod(0o600)
+    before=path.read_bytes()
+    if accepted:
+        assert s.access_token(tmp_path)=='same'
+    else:
+        with pytest.raises(s.PolicyViolation): s.access_token(tmp_path)
+    assert path.read_bytes()==before
+
+
+@pytest.mark.parametrize('retain', [True,False])
+def test_wrapper_output_is_bounded_in_utf8_bytes(retain):
+    captured=s.BoundedTextCapture(6,retain=retain)
+    assert captured.write('深海')==2
+    assert captured.getvalue()==('深海' if retain else '')
+    with pytest.raises(s.PolicyViolation): captured.write('x')
+    assert captured.getvalue()==('深海' if retain else '')
+    with pytest.raises(s.PolicyViolation): s.BoundedTextCapture(5).write('深海')

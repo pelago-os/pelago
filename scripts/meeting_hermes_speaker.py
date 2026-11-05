@@ -27,6 +27,30 @@ class PolicyViolation(BaseException):
     """Must not be swallowed by provider retry/fallback Exception handlers."""
 
 
+class BoundedTextCapture(io.StringIO):
+    """Bound Python-level provider chatter before constructing a receipt.
+
+    Direct fd writes still go to the parent's bounded pipes; contaminated JSON
+    remains a failed receipt, never a best-effort extraction.
+    """
+    def __init__(self, limit, *, retain=True):
+        super().__init__()
+        self.remaining = limit
+        self.retain = retain
+
+    def write(self, text):
+        if not isinstance(text, str):
+            raise TypeError('expected text')
+        # Avoid encoding an already oversized string just to count its bytes.
+        if len(text) > self.remaining:
+            raise PolicyViolation('provider output limit exceeded')
+        size = len(text.encode('utf-8'))
+        if size > self.remaining:
+            raise PolicyViolation('provider output limit exceeded')
+        self.remaining -= size
+        return super().write(text) if self.retain else len(text)
+
+
 class Terminated(BaseException):
     pass
 
@@ -44,7 +68,7 @@ def terminate(signum, frame):
 
 
 def access_token(profile):
-    # Only this profile's singleton access token; never retain/pass its refresh token.
+    # Only one distinct access token from this profile; never retain/pass its refresh token.
     data = json.loads(private_file(profile, 'auth.json').read_text())
     tokens = []
     token = data.get('providers', {}).get('openai-codex', {}).get('tokens', {}).get('access_token')
@@ -55,7 +79,9 @@ def access_token(profile):
         if not isinstance(pool, list) or len(pool) != 1 or not isinstance(pool[0], dict):
             raise PolicyViolation('ambiguous credential pool')
         tokens.append(pool[0].get('access_token'))
-    if len(tokens) != 1 or not isinstance(tokens[0], str) or not tokens[0]:
+    if not tokens or any(not isinstance(t, str) or not t for t in tokens):
+        raise PolicyViolation('one profile access token required')
+    if len(set(tokens)) != 1:
         raise PolicyViolation('one profile access token required')
     token = tokens[0]
     return token
@@ -285,8 +311,8 @@ def main():
         sys.path[:] = [str(root / 'hermes')] + [p for p in sys.path if p and Path(p).resolve().is_relative_to(root)]
         check_imports(root)
         prompt = sys.stdin.read()
-        captured = io.StringIO()
-        with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(io.StringIO()):
+        captured = BoundedTextCapture(8 * 1024 * 1024)
+        with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(BoundedTextCapture(2 * 1024 * 1024, retain=False)):
             from dotenv import dotenv_values
             import yaml
             key = API_KEYS[provider]

@@ -21,6 +21,7 @@ from pathlib import Path
 from app import config
 from app.database import get_connection
 from app.meetings import service, artifacts
+from app.meetings.output_capture import OutputCapture
 from app.meetings.adapter_config import load_members
 from app.meetings.adapters import (build_command, cleanup_after, external_units_gone, launch_external_snapshot,
                                    parse_result)
@@ -108,6 +109,7 @@ class Running:
     member: object
     requested_model: str | None = None
     external: dict | None = None  # launch snapshot of units outside the process group
+    capture: OutputCapture | None = None
 
 
 def _snapshot(text) -> dict | None:
@@ -170,6 +172,8 @@ class Runner:
                 run.popen.wait(timeout=2)
             except Exception:
                 pass
+            if run.capture:
+                run.capture.finish()
         self.procs.clear()
         if self.generation is not None:
             log.warning("meetings runner fenced (%s), generation %s", why, self.generation)
@@ -301,7 +305,10 @@ class Runner:
                 # claimed but never launched (or launch already torn down): nothing to stop
                 self._write(service.confirm_terminated, attempt_id, self.owner, self.generation)
                 continue
-            if not kill_group(run.pgid, self.term_grace, self.kill_wait, reap=run.popen.poll):
+            gone = kill_group(run.pgid, self.term_grace, self.kill_wait, reap=run.popen.poll)
+            if run.capture:
+                run.capture.finish()
+            if not gone:
                 self._write(service.quarantine, attempt_id, self.owner, self.generation, "process group survived SIGKILL")
             elif not self._external_gone(run.external):
                 self._write(service.quarantine, attempt_id, self.owner, self.generation,
@@ -317,22 +324,37 @@ class Runner:
     def _collect_finished(self) -> None:
         for attempt_id, run in list(self.procs.items()):
             code = run.popen.poll()
-            if code is None:
+            capture_failed = run.capture is not None and run.capture.failed.is_set()
+            if code is None and not capture_failed:
                 continue
+            # Reserve time for reclamation without letting an expired owner write.
+            if not self._renew_now():
+                return
             self.procs.pop(attempt_id)
-            # a normal exit counts only once the whole group is gone (A22)
-            if group_alive(run.pgid) is not False and not kill_group(run.pgid, self.term_grace, self.kill_wait):
+            gone = group_alive(run.pgid) is False
+            if not gone:
+                gone = kill_group(run.pgid, self.term_grace, self.kill_wait, reap=run.popen.poll)
+            if run.capture:
+                run.capture.finish()
+            if not gone:
                 self._write(service.quarantine, attempt_id, self.owner, self.generation, "descendants survived the leader")
                 continue
             if not self._external_gone(run.external):
                 self._write(service.quarantine, attempt_id, self.owner, self.generation,
                             "an execution unit outside the process group could not be confirmed gone")
                 continue
-            stdout = run.out_path.read_text(encoding="utf-8", errors="replace") if run.out_path.exists() else ""
-            stderr = run.err_path.read_text(encoding="utf-8", errors="replace") if run.err_path.exists() else ""
-            outcome = parse_result(run.member, stdout, stderr, code, run.requested_model, execution_snapshot=run.external)
+            stdout = None
+            if run.capture and run.capture.failed.is_set():
+                outcome = {"status": "failed", "error_code": run.capture.error_code,
+                           "detail": "adapter output exceeded its limit or could not be collected completely",
+                           "requested_model": run.requested_model}
+            else:
+                stdout = run.out_path.read_text(encoding="utf-8", errors="replace") if run.out_path.exists() else ""
+                stderr = run.err_path.read_text(encoding="utf-8", errors="replace") if run.err_path.exists() else ""
+                outcome = parse_result(run.member, stdout, stderr, code, run.requested_model, execution_snapshot=run.external)
             self._write(service.record_turn_result, attempt_id, self.owner, self.generation, outcome)
-            cleanup_after(run.member, stdout)
+            if stdout is not None:
+                cleanup_after(run.member, stdout)
 
     def _clean_artifacts(self, *, full):
         if not self._renew_if_due():
@@ -460,18 +482,31 @@ class Runner:
         identity_path = base.with_suffix(".identity")
         prompt_path, out_path, err_path = base.with_suffix(".prompt"), base.with_suffix(".out"), base.with_suffix(".err")
         go_r, go_w = os.pipe()
+        capture = None
+        popen = None
         try:
             artifacts.secure_directory(self.run_dir)
             with artifacts.private_open(prompt_path, "w") as stream:
                 stream.write(prompt)
-            with prompt_path.open("rb") as stdin, artifacts.private_open(out_path, "wb") as out, artifacts.private_open(err_path, "wb") as err:
+            capture = OutputCapture(out_path, err_path)
+            with prompt_path.open("rb") as stdin:
                 popen = subprocess.Popen(
                     [sys.executable, "-I", str(LAUNCHER), str(identity_path), str(go_r), "--", *argv],
-                    stdin=stdin, stdout=out, stderr=err, cwd=cwd, env=env,
+                    stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env,
                     start_new_session=True, pass_fds=(go_r,), close_fds=True)
-        except (OSError, ValueError) as exc:
+            capture.start(popen.stdout, popen.stderr)
+        except (OSError, ValueError, RuntimeError) as exc:
             os.close(go_r)
             os.close(go_w)
+            if popen is not None:
+                gone = kill_group(popen.pid, self.term_grace, self.kill_wait, reap=popen.poll)
+                if capture:
+                    capture.finish()
+                if not gone:
+                    self._write(service.quarantine, attempt_id, self.owner, self.generation, "launcher survived teardown")
+                    return True
+            elif capture:
+                capture.finish()
             self._write(service.fail_unlaunched, attempt_id, self.owner, self.generation, "launch_failed",
                         "experimental adapter launch failed; operator review required" if member.adapter in ("claude_code", "hermes") else str(exc))
             return True
@@ -492,6 +527,7 @@ class Runner:
         if not ok:
             os.close(go_w)  # EOF: the launcher exits without exec
             gone = kill_group(pgid, self.term_grace, self.kill_wait, reap=popen.poll)
+            capture.finish()
             if self.generation is not None:
                 if gone:
                     self._write(service.fail_unlaunched, attempt_id, self.owner, self.generation, "launch_failed",
@@ -502,10 +538,11 @@ class Runner:
         if not self._send_go(go_w):
             os.close(go_w)  # EOF: the launcher never execs
             kill_group(pgid, self.term_grace, self.kill_wait, reap=popen.poll)
+            capture.finish()
             self.fence("lease missed before go")
             return False
         self.procs[attempt_id] = Running(attempt_id, popen, pgid, out_path, err_path, member,
-                                         ctx.get("model") or member.default_model or None, external)
+                                         ctx.get("model") or member.default_model or None, external, capture)
         return True
 
     def _send_go(self, go_w: int) -> bool:
