@@ -135,7 +135,7 @@ def room_signals(threads: list[ThreadSummary], board_slugs: list[str]) -> list[S
 def station_meta() -> dict:
     """Public, non-sensitive identity of this base (shown in the page title and sidebar)."""
     from app.meetings.settings import capabilities
-    return {"base_name": config.settings.base_name, "product": "Pelago OS", "version": "0.2.0", "meetings": capabilities()}
+    return {"base_name": config.settings.base_name, "product": "Pelago OS", "version": "0.2.1", "meetings": capabilities()}
 
 
 @router.get("/snapshot", response_model=StationSnapshot)

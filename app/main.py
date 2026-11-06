@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
             runner.stop()
 
 
-app = FastAPI(title="Pelago OS", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Pelago OS", version="0.2.1", lifespan=lifespan)
 app.include_router(forum_router)
 app.include_router(station_router)
 app.include_router(library_router)

@@ -84,7 +84,7 @@ def test_meetings_v2_privacy_and_scope_boundaries():
     assert ".mv2-project-draft" not in style_css
 
     # 3. index.html includes meetings-v2.js and hides #meeting-room-btn by default until meta enables it
-    assert '<script src="/static/meetings-v2.js?v=0.2.0"></script>' in index_html
+    assert '<script src="/static/meetings-v2.js?v=0.2.1"></script>' in index_html
     assert 'id="meeting-room-btn" type="button" style="display:none"' in index_html
 
     # 4. app.js gates station meeting entries and toolbar button on state.meetingsMeta?.enabled
